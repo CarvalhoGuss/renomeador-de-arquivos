@@ -1,4 +1,4 @@
-# Nome do Projeto
+# renomeador de arquivos
 
 Este script tem a função de automatizar a tarefa de renomear arquivos automaticamente. Automatizando tarefas manuais e repetitivas que levariam horas ou dias, aqui leva menos de 1 segundo. Quanto mais arquivos, 
 mais tempo você economiza. 
