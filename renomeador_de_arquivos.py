@@ -3,8 +3,8 @@
 # Autor: Gustavo Carvalho Brito
 # Data de criação: 04/04/2024 - 00:16
 # Data de lançamento: 15/04/2024 - 23:36
-# Última modificação: 15/04/2024
-# Versão: 1.0.0
+# Última modificação: 23/06/2025 - 20:50
+# Versão: 1.1.0
 
 # Libs utilizadas:
 import os
@@ -26,14 +26,14 @@ def leia_int(msg):
             return n
 
 
-def linha(tam=42):
+def linha_menu(tam=42):
     return '-' * tam
 
 
-def cabecalho(txt):
-    print(linha())
+def cabecalho_menu(txt):
+    print(linha_menu())
     print(txt.center(42))
-    print(linha())
+    print(linha_menu())
 
 
 def menu(lista):
@@ -42,9 +42,9 @@ def menu(lista):
     for item in lista:
         print(f'\033[33m{c}\033[m - \033[34m{item}\033[m')
         c += 1
-    print(linha())
+    print(linha_menu())
     opc = leia_int('\033[33mSua Opção: \033[m')
-    print(linha())
+    print(linha_menu())
     return opc
 
 
@@ -75,19 +75,25 @@ def adicao_de_caractere(pasta):
         print('\033[33mEm qual parte do nome você gostaria de adicionar essas caracteres?\033[m')
         print('\033[33m1\033[m - \033[34mInício\033[m')
         print('\033[33m2\033[m - \033[34mFinal\033[m')
+        print('\033[33m3\033[m - \033[34mA partir da primeira ocorrência de uma caractere\033[m')
         opc = leia_int('\033[33mSua Opção: \033[m')
         caracteres = str(input('\033[33mDigite EXATAMENTE o texto que deseja adicionar: \033[m'))
+        if opc == 3:
+            buscar = str(input('\033[33m"' + caracteres + '"' + ' deverá ser inserido a partir de qual caractere: \033'
+                                                                '[m'))
         conf = confirmacao()
         if conf == 'S':
             break
-    if opc == 1:
+
+    if opc == 1:  # Início
         for nome_arquivo in os.listdir(pasta):
             nome_antigo = pasta + '/' + nome_arquivo
             nome_novo = pasta + '/' + caracteres + nome_arquivo
             os.rename(nome_antigo, nome_novo)
         listando_nomes_novos(pasta)
-    elif opc == 2:
-        for nome_arquivo in os.listdir(pasta):
+
+    elif opc == 2:  # Final
+        for nome_arquivo in os.listdir(pasta):  # para cada arquivo no diretório
             nome_antigo = pasta + '/' + nome_arquivo
             extensao = nome_arquivo.rfind('.')
             parte1 = pasta + '/' + nome_arquivo[:extensao] + caracteres
@@ -96,10 +102,26 @@ def adicao_de_caractere(pasta):
             os.rename(nome_antigo, nome_novo)
         listando_nomes_novos(pasta)
 
+    elif opc == 3:  # Ocorrencia de uma caractere
+        for nome_arquivo in os.listdir(pasta):
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')  # Encontra a extensão
+            parte1 = pasta + '/' + nome_arquivo[:extensao] + caracteres  # pega o nome do arquivo antes da extensão
+            posicao = parte1.find(buscar)
+            if posicao != -1:
+                parte2 = nome_arquivo[extensao:]
+                nome_novo = parte1[:posicao+1] + caracteres + parte1[posicao+1:] + parte2
+                os.rename(nome_antigo, nome_novo)
+        listando_nomes_novos(pasta)
+
 
 def remocao_de_caractere(pasta):
     # Remove uma "string" em específico.
-    remover = str(input('\033[33mDigite EXATAMENTE o texto/caractere que você quer que seja removido: \033[m'))
+    while True:
+        remover = str(input('\033[33mDigite EXATAMENTE o texto/caractere que você quer que seja removido: \033[m'))
+        conf = confirmacao()
+        if conf == 'S':
+            break
     for nome_arquivo in os.listdir(pasta):
         try:
             if remover in nome_arquivo:
@@ -113,8 +135,12 @@ def remocao_de_caractere(pasta):
 
 def substituicao_de_caractere(pasta):
     # Substitui uma "string" por outra (inclui cada ocorrencia dentro da frase)
-    remover = str(input('\033[33mDigite EXATAMENTE o texto/caractere que você quer que seja removido: \033[m'))
-    substituicao = str(input('\033[33mDigite EXATAMENTE o texto/caractere que deve ser inserido: \033[m'))
+    while True:
+        remover = str(input('\033[33mDigite EXATAMENTE o texto/caractere que você quer que seja removido: \033[m'))
+        substituicao = str(input('\033[33mDigite EXATAMENTE o texto/caractere que deve ser inserido: \033[m'))
+        conf = confirmacao()
+        if conf == 'S':
+            break
     for nome_arquivo in os.listdir(pasta):
         try:
             if remover in nome_arquivo:
@@ -126,7 +152,11 @@ def substituicao_de_caractere(pasta):
     listando_nomes_novos(pasta)
 
 
-def maiusculas(pasta):
+def iniciais_maiusculas(pasta):
+    while True:
+        conf = confirmacao()
+        if conf == 'S':
+            break
     for nome_arquivo in os.listdir(pasta):
         nome_antigo = pasta + '/' + nome_arquivo
         extensao = nome_arquivo.rfind('.')
@@ -200,10 +230,10 @@ def listar_todos_os_arquivos(pasta):
 lista_de_opcoes = ['Adição de caractere', 'Remoção de caractere', 'Substituição de texto/caractere',
                    'Transformar caracteres iniciais em maiúsculas', 'Inverter "Título - Nome"',
                    'Recortar nome', 'Listar todos os arquivos da pasta', 'Sair.']
-cabecalho("\033[1:33mRENOMEADOR DE ARQUIVOS\033[m")
+cabecalho_menu("\033[1:33mRENOMEADOR DE ARQUIVOS\033[m")
 caminho = str(input('\033[33mDigite o caminho da pasta (recomendado copiar endereço da barra do Explorador de '
-                    'Arquivos): \033[m'))
-print(linha())
+                    'Arquivos, inserir sem aspas): \033[m'))
+print(linha_menu())
 while True:
     resposta = menu(lista_de_opcoes)
     if resposta == 1:
@@ -217,7 +247,7 @@ while True:
         substituicao_de_caractere(caminho)
     elif resposta == 4:
         # Transformar caracteres Iniciais em Maiúsculas
-        maiusculas(caminho)
+        iniciais_maiusculas(caminho)
     elif resposta == 5:
         # Inverter "Título - Nome"
         inverter(caminho)
