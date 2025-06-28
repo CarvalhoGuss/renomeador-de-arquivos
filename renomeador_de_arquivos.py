@@ -3,7 +3,7 @@
 # Autor: Gustavo Carvalho Brito
 # Data de criação: 04/04/2024 - 00:16
 # Data de lançamento: 15/04/2024 - 23:36
-# Última modificação: 23/06/2025 - 20:50
+# Última modificação: 27/06/2025 - 23:30
 # Versão: 1.1.0
 
 # Libs utilizadas:
@@ -68,6 +68,18 @@ def listando_nomes_novos(pasta):
     sleep(1)
 
 
+# Funções gerais
+def contar_itens_da_pasta(pasta):
+    itens_na_pasta = os.listdir(pasta)
+    arquivos = []
+    for item in itens_na_pasta:
+        caminho_completo = os.path.join(pasta, item)
+        if os.path.isfile(caminho_completo):
+            arquivos.append(item)
+    quantidade = len(arquivos)
+    return quantidade
+
+
 # Funções de Manipulação de “String”:
 def adicao_de_caractere(pasta):
     # Adiciona uma "string" no Início ou no Final da "String".
@@ -78,6 +90,7 @@ def adicao_de_caractere(pasta):
         print('\033[33m3\033[m - \033[34mA partir da primeira ocorrência de uma caractere\033[m')
         opc = leia_int('\033[33mSua Opção: \033[m')
         caracteres = str(input('\033[33mDigite EXATAMENTE o texto que deseja adicionar: \033[m'))
+        buscar = ''
         if opc == 3:
             buscar = str(input('\033[33m"' + caracteres + '"' + ' deverá ser inserido a partir de qual caractere: \033'
                                                                 '[m'))
@@ -110,7 +123,7 @@ def adicao_de_caractere(pasta):
             posicao = parte1.find(buscar)
             if posicao != -1:
                 parte2 = nome_arquivo[extensao:]
-                nome_novo = parte1[:posicao+1] + caracteres + parte1[posicao+1:] + parte2
+                nome_novo = parte1[:posicao + 1] + caracteres + parte1[posicao + 1:] + parte2
                 os.rename(nome_antigo, nome_novo)
         listando_nomes_novos(pasta)
 
@@ -187,35 +200,145 @@ def inverter(pasta):
 def recortar_nome(pasta):
     while True:
         print('\033[33mGostaria de recortar em que parte?\033[m')
+        print('\033[33m1\033[m - \033[34mQuantidade de caracteres do início\033[m')
+        print('\033[33m2\033[m - \033[34mQuantidade de caracteres do final\033[m')
+        print('\033[33m3\033[m - \033[34mCortar até encontrar uma determinada caractere lendo do início para o '
+              'final\033[m')
+        print('\033[33m4\033[m - \033[34mCortar até encontrar uma determinada caractere lendo do final para o '
+              'início\033[m')
+        opc = leia_int('\033[33mSua Opção: \033[m')
+        buscar = ''
+        numero = ''
+        if opc == 1 or opc == 2:
+            numero = int(input('\033[33mQuantidade de caracteres que gostaria de recortar: \033[m'))
+        elif opc == 3 or opc == 4:
+            buscar = str(input('\033[33mApagar até encontrar qual caractere: \033''[m'))
+        conf = confirmacao()
+        if conf == 'S':
+            break
+
+    if opc == 1:
+        # Fatiamento do Início
+        for nome_arquivo in os.listdir(pasta):
+            nome_antigo = os.path.join(pasta, nome_arquivo)
+            if len(nome_arquivo) > numero:
+                nome_novo = os.path.join(pasta, nome_arquivo[numero:])
+                if nome_novo != nome_antigo:
+                    if not os.path.exists(nome_novo):
+                        os.rename(nome_antigo, nome_novo)
+
+    elif opc == 2:
+        # Fatiamento do Final
+        for nome_arquivo in os.listdir(pasta):
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')
+            parte1 = nome_arquivo[:extensao]
+            parte2 = nome_arquivo[extensao:]
+            if len(nome_arquivo) > numero:
+                nome_novo = pasta + '/' + parte1[:-numero] + parte2
+                if nome_novo != nome_antigo:
+                    if not os.path.exists(nome_novo):
+                        os.rename(nome_antigo, nome_novo)
+
+    elif opc == 3:
+        # Busca início até o final
+        for nome_arquivo in os.listdir(pasta):
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')  # Encontra a localização que a extensão começa
+            parte1 = nome_arquivo[:extensao]  # Nome do arquivo antes da extensão
+            parte2 = nome_arquivo[extensao:]  # Extensão
+            posicao = parte1.find(buscar)  # Encontra a localização da ocorrencia da String fornecida
+            if posicao != -1:  # Verifica se a string está no arquivo
+                nome_novo = pasta + '/' + parte1[posicao:] + parte2  # Gera o nome renomeado
+                if nome_novo != nome_antigo:
+                    if not os.path.exists(nome_novo):
+                        os.rename(nome_antigo, nome_novo)  # Atribui o nome ao arquivo
+
+    elif opc == 4:
+        # Busca final até o início
+        for nome_arquivo in os.listdir(pasta):
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')  # Encontra a localização que a extensão começa
+            parte1 = nome_arquivo[:extensao]  # Nome do arquivo antes da extensão
+            parte2 = nome_arquivo[extensao:]  # Extensão
+            posicao = parte1.rfind(buscar)  # Encontra a localização da ocorrencia da String fornecida
+            if posicao != -1:  # Verifica se a string está no arquivo
+                nome_novo = pasta + '/' + parte1[:posicao] + parte2  # Gera o nome renomeado
+                if nome_novo != nome_antigo:
+                    if not os.path.exists(nome_novo):
+                        os.rename(nome_antigo, nome_novo)  # Atribui o nome ao arquivo
+    listando_nomes_novos(pasta)
+
+
+def enumerar(pasta):
+    # Enumera cada arquivo no Início ou no Final da "String" de acordo com o que o usuário especificar.
+    while True:
+        print('\033[33mEm qual parte do nome você gostaria de adicionar os indices? \033[m')
         print('\033[33m1\033[m - \033[34mInício\033[m')
         print('\033[33m2\033[m - \033[34mFinal\033[m')
+        print('\033[33m3\033[m - \033[34mA partir da primeira ocorrência de uma caractere\033[m')
         opc = leia_int('\033[33mSua Opção: \033[m')
-        numero = int(input('\033[33mQuantidade de caracteres que gostaria de recortar: \033[m'))
-        if opc == 1:
-            # Fatiamento do Início
-            for nome_arquivo in os.listdir(pasta):
-                try:
-                    nome_antigo = pasta + '/' + nome_arquivo
-                    nome_novo = pasta + '/' + nome_arquivo[numero:]
-                    os.rename(nome_antigo, nome_novo)
-                except Exception:
-                    pass
-            listando_nomes_novos(pasta)
-        elif opc == 2:
-            # Fatiamento do Final
-            for nome_arquivo in os.listdir(pasta):
-                try:
-                    nome_antigo = pasta + '/' + nome_arquivo
-                    extensao = nome_arquivo.rfind('.')
-                    parte1 = nome_arquivo[:extensao]
-                    parte2 = nome_arquivo[extensao:]
-                    nome_recortado = parte1[:-numero]
-                    nome_novo = pasta + '/' + nome_recortado + parte2
-                    os.rename(nome_antigo, nome_novo)
-                except Exception:
-                    pass
-            listando_nomes_novos(pasta)
-        break
+        print('\033[33mQual formato você gostaria de adicionar? \033[m')
+        print('\033[33m1\033[m - \033[34m1, 2, 3... 10... 100.\033[m')
+        print('\033[33m2\033[m - \033[34m001, 002, 003... 010.\033[m')
+        tipo_contagem = leia_int('\033[33mSua Opção: \033[m')
+        antes = str(input('\033[33mDigite EXATAMENTE o texto que deseja adicionar antes do indice (Enter para não '
+                          'adicionar nada): \033[m'))
+        depois = str(input('\033[33mDigite EXATAMENTE o texto que deseja adicionar depois do indice(Enter para não '
+                           'adicionar nada): \033[m'))
+        buscar = ''
+        if opc == 3:
+            buscar = str(input('\033[33m"' + antes + '"' + ' deverá ser inserido a partir de qual caractere: \033'
+                                                           '[m'))
+        tamanho_quantidade = 0
+        if tipo_contagem == 1:
+            tamanho_quantidade = 0
+
+        elif tipo_contagem == 2:
+            # Cria uma lista apenas com os arquivos (exclui subpastas)
+            quantidade = contar_itens_da_pasta(pasta)
+            print(f'Quantidade de arquivos na pasta: {quantidade}')
+            tamanho_quantidade = len(str(quantidade))
+
+        conf = confirmacao()
+        if conf == 'S':
+            break
+
+    indice = 0
+    if opc == 1:  # Início
+        for nome_arquivo in os.listdir(pasta):
+            indice += 1
+            indice_formatado = f"{indice:0{int(tamanho_quantidade)}d}"
+            nome_antigo = pasta + '/' + nome_arquivo
+            nome_novo = pasta + '/' + antes + indice_formatado + depois + nome_arquivo
+            os.rename(nome_antigo, nome_novo)
+        listando_nomes_novos(pasta)
+
+    elif opc == 2:  # Final
+        for nome_arquivo in os.listdir(pasta):  # para cada arquivo no diretório
+            indice += 1
+            indice_formatado = f"{indice:0{int(tamanho_quantidade)}d}"
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')
+            parte1 = pasta + '/' + nome_arquivo[:extensao] + antes + indice_formatado + depois
+            parte2 = nome_arquivo[extensao:]
+            nome_novo = parte1 + parte2
+            os.rename(nome_antigo, nome_novo)
+        listando_nomes_novos(pasta)
+
+    elif opc == 3:  # Ocorrencia de uma caractere
+        for nome_arquivo in os.listdir(pasta):
+            indice += 1
+            indice_formatado = f"{indice:0{int(tamanho_quantidade)}d}"
+            nome_antigo = pasta + '/' + nome_arquivo
+            extensao = nome_arquivo.rfind('.')  # Encontra a extensão
+            parte1 = pasta + '/' + nome_arquivo[:extensao]  # pega o nome do arquivo antes da extensão
+            posicao = parte1.find(buscar)
+            if posicao != -1:
+                parte2 = nome_arquivo[extensao:]
+                nome_novo = parte1[:posicao + 1] + antes + indice_formatado + depois + parte1[posicao + 1:] + parte2
+                os.rename(nome_antigo, nome_novo)
+        listando_nomes_novos(pasta)
 
 
 def listar_todos_os_arquivos(pasta):
@@ -229,7 +352,7 @@ def listar_todos_os_arquivos(pasta):
 # Programa Principal
 lista_de_opcoes = ['Adição de caractere', 'Remoção de caractere', 'Substituição de texto/caractere',
                    'Transformar caracteres iniciais em maiúsculas', 'Inverter "Título - Nome"',
-                   'Recortar nome', 'Listar todos os arquivos da pasta', 'Sair.']
+                   'Recortar nome', 'Enumerar cada arquivo', 'Listar todos os arquivos da pasta', 'Sair.']
 cabecalho_menu("\033[1:33mRENOMEADOR DE ARQUIVOS\033[m")
 caminho = str(input('\033[33mDigite o caminho da pasta (recomendado copiar endereço da barra do Explorador de '
                     'Arquivos, inserir sem aspas): \033[m'))
@@ -255,8 +378,15 @@ while True:
         # Recortar o nome
         recortar_nome(caminho)
     elif resposta == 7:
+        # Enumerar os arquivos
+        enumerar(caminho)
+    elif resposta == 8:
         # Listar todos os arquivos da pasta
         listar_todos_os_arquivos(caminho)
-    elif resposta == 8:
+    elif resposta == 9:
         # Sair
         break
+
+# adicionar função de "apagar tudo até x ponto, de trás para frente e de frente para trás. adicionar contador de
+# tempo em segundos, minutos e horas, de quantos arquivos foram renomeados, quantos foram ignorados contar também o
+# tempo que a operação toda levou
