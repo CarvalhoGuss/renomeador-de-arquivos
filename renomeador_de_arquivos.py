@@ -421,7 +421,8 @@ def enumerar(pasta):
             posicao = nome_base.find(buscar)
             if posicao != -1:
                 extensao = nome_arquivo[posicao_extensao:]
-                nome_novo = nome_base[:posicao + 1] + antes + indice_formatado + depois + nome_base[posicao + 1:] + extensao
+                nome_novo = (nome_base[:posicao + 1] + antes + indice_formatado + depois + nome_base[posicao + 1:] +
+                             extensao)
                 os.rename(nome_antigo, nome_novo)
                 arquivos_renomeados += 1
             else:
