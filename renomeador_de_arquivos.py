@@ -3,13 +3,12 @@
 # Autor: Gustavo Carvalho Brito
 # Data de criação: 04/04/2024 - 00:16
 # Data de lançamento: 15/04/2024 - 23:36
-# Última modificação: 28/06/2025 - 23:30
-# Versão: 1.1.0
+# Última modificação: 30/06/2025 - 01:42
+# Versão: 1.1.2
 
 # Libs utilizadas:
 import os
 import time
-from time import sleep
 
 
 # Funções de “Interface”:
@@ -83,7 +82,7 @@ def relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_i
     print(f'\033[33mQuantidade de arquivos renomeados: {arquivos_renomeados}\033[m\n')
     print(f'\033[33mQuantidade de arquivos ignorados: {arquivos_ignorados}\033[m\n')
     print('\n\033[33mRetornando ao menu principal...\033[m\n')
-    sleep(1)
+    time.sleep(1)
 
 
 # Funções de Manipulação do Menu:
@@ -436,7 +435,7 @@ def listar_todos_os_arquivos(pasta):
         print(arquivo)
     print()
     print('\033[33mRetornando ao menu principal...\033[m')
-    sleep(1)
+    time.sleep(1)
 
 
 # Programa Principal
@@ -476,5 +475,3 @@ while True:
     elif resposta == 9:
         # Sair
         break
-
-# Arrumar a função de adicionar a partir de uma ocorrencia
