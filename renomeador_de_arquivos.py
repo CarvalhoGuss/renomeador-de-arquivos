@@ -60,21 +60,18 @@ def confirmacao():
 
 # Funções gerais
 def contar_itens_da_pasta(pasta):
-    itens_na_pasta = os.listdir(pasta)
-    arquivos = []
-    for item in itens_na_pasta:
-        caminho_completo = os.path.join(pasta, item)
-        if os.path.isfile(caminho_completo):
-            arquivos.append(item)
-    quantidade = len(arquivos)
+    quantidade = 0
+    for entrada in os.scandir(pasta):
+        if entrada.is_file():
+            quantidade += 1
     return quantidade
 
 
 def relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados):
     print('\n\033[35mRenomeando...')
     print('\nResultados: \033[m\n')
-    for arquivo in os.listdir(pasta):
-        print(arquivo)
+    for entrada in os.scandir(pasta):
+        print(entrada.name)
     print('\n\033[35mProcesso finalizado!\033[m')
     tempo_total = tempo_final - tempo_inicial
     print(f'\n\033[33mTarefa realizada em {tempo_total:.4f} segundos.\033[m\n')
@@ -83,6 +80,48 @@ def relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_i
     print(f'\033[33mQuantidade de arquivos ignorados: {arquivos_ignorados}\033[m\n')
     print('\n\033[33mRetornando ao menu principal...\033[m\n')
     time.sleep(1)
+
+
+def processar_renomeacao(pasta, opc, caracteres, buscar=''):
+    arquivos_renomeados = 0
+    arquivos_ignorados = 0
+    tempo_inicial = time.time()
+
+    # "Congela" a pasta em uma lista para evitar loops infinitos
+    arquivos = list(os.scandir(pasta))
+
+    for entrada in arquivos:
+        if not entrada.is_file():
+            continue
+
+        nome_arquivo = entrada.name
+        nome_antigo = entrada.path
+        nome_base, extensao = os.path.splitext(nome_arquivo)
+
+        # --- Lógica de Construção do Nome ---
+        if opc == 1:  # Início
+            nome_novo_base = caracteres + nome_base
+        elif opc == 2:  # Final
+            nome_novo_base = nome_base + caracteres
+        elif opc == 3:  # Após ocorrência
+            posicao = nome_base.find(buscar)
+            if posicao == -1:
+                arquivos_ignorados += 1
+                continue
+            nome_novo_base = nome_base[:posicao + 1] + caracteres + nome_base[posicao + 1:]
+
+        nome_novo = os.path.join(pasta, nome_novo_base + extensao)
+
+        # --- Execução com Segurança ---
+        if nome_novo != nome_antigo and not os.path.exists(nome_novo):
+            os.rename(nome_antigo, nome_novo)
+            arquivos_renomeados += 1
+        else:
+            arquivos_ignorados += 1
+
+    tempo_final = time.time()
+    relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
+
 
 
 # Funções de Manipulação no Menu:
@@ -106,16 +145,21 @@ def adicao_de_caractere(pasta):
     arquivos_renomeados = 0
     arquivos_ignorados = 0
     if opc == 1:  # Início
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
+            if not entrada.is_file():  # ignora pastas
+                continue
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
             nome_novo = os.path.join(pasta, caracteres + nome_base + extensao)
             os.rename(nome_antigo, nome_novo)
             arquivos_renomeados += 1
 
     elif opc == 2:  # Final
-        for entrada in os.scandir(pasta):  # para cada arquivo no diretório
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:  # para cada arquivo no diretório
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -126,7 +170,8 @@ def adicao_de_caractere(pasta):
             arquivos_renomeados += 1
 
     elif opc == 3:  # Ocorrencia de uma caractere
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -161,7 +206,8 @@ def remocao_de_caractere(pasta):
     arquivos_renomeados = 0
     arquivos_ignorados = 0
     arquivos_existentes = set(os.listdir(pasta))  # carrega tudo na memória
-    for entrada in os.scandir(pasta):
+    arquivos = list(os.scandir(pasta))
+    for entrada in arquivos:
         if not entrada.is_file():
             arquivos_ignorados += 1
             continue
@@ -169,7 +215,7 @@ def remocao_de_caractere(pasta):
         nome_antigo = entrada.path
         nome_base, extensao = os.path.splitext(nome_arquivo)
         if remover in nome_base:
-            novo_base = nome_base.replace(remover, '').strip()
+            novo_base = nome_base.replace(remover, '', 1).strip()
             nome_novo = novo_base + extensao
             if nome_novo == nome_arquivo:
                 arquivos_ignorados += 1
@@ -201,14 +247,15 @@ def substituicao_de_caractere(pasta):
     tempo_inicial = time.time()
     arquivos_renomeados = 0
     arquivos_ignorados = 0
-    for entrada in os.scandir(pasta):
+    arquivos = list(os.scandir(pasta))
+    for entrada in arquivos:
         if not entrada.is_file():
             continue
         nome_arquivo = entrada.name
         nome_antigo = entrada.path
         nome_base, extensao = os.path.splitext(nome_arquivo)
         if remover in nome_arquivo:
-            nome_base = nome_base.replace(remover, substituicao)
+            nome_base = nome_base.replace(remover, substituicao, 1)
             nome_novo = os.path.join(pasta, nome_base + extensao)
             if nome_novo != nome_antigo and not os.path.exists(nome_novo):
                 os.rename(nome_antigo, nome_novo)
@@ -229,7 +276,8 @@ def iniciais_maiusculas(pasta):
     tempo_inicial = time.time()
     arquivos_renomeados = 0
     arquivos_ignorados = 0
-    for entrada in os.scandir(pasta):
+    arquivos = list(os.scandir(pasta))
+    for entrada in arquivos:
         if not entrada.is_file():
             continue
         nome_arquivo = entrada.name
@@ -247,10 +295,16 @@ def iniciais_maiusculas(pasta):
 
 
 def inverter(pasta):
+    #Falta adicionar verificação S/N aqui
+    while True:
+        conf = confirmacao()
+        if conf == 'S':
+            break
     tempo_inicial = time.time()
     arquivos_renomeados = 0
     arquivos_ignorados = 0
-    for entrada in os.scandir(pasta):
+    arquivos = list(os.scandir(pasta))
+    for entrada in arquivos:
         if not entrada.is_file():
             continue
         nome_arquivo = entrada.name
@@ -309,7 +363,8 @@ def recortar_nome(pasta):
 
     if opc == 1:
         # Fatiamento do Início
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -330,7 +385,8 @@ def recortar_nome(pasta):
 
     elif opc == 2:
         # Fatiamento do Final
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -351,7 +407,8 @@ def recortar_nome(pasta):
 
     elif opc == 3:
         # Busca início até o final
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -373,7 +430,8 @@ def recortar_nome(pasta):
 
     elif opc == 4:
         # Busca final até o início
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -394,7 +452,8 @@ def recortar_nome(pasta):
                 arquivos_ignorados += 0
 
     elif opc == 5:
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -414,15 +473,17 @@ def recortar_nome(pasta):
                 arquivos_ignorados += 1
 
     elif opc == 6:
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
             if len(nome_base) > manter:
+                novo_base = nome_base[-manter:]
                 nome_novo = os.path.join(pasta, nome_base[-manter:] + extensao)
-                if nome_novo != nome_antigo:
+                if nome_arquivo != novo_base + extensao:
                     if not os.path.exists(nome_novo):
                         os.rename(nome_antigo, nome_novo)
                         arquivos_renomeados += 1
@@ -434,7 +495,8 @@ def recortar_nome(pasta):
                 arquivos_ignorados += 1
 
     elif opc == 7:
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             nome_arquivo = entrada.name
@@ -442,9 +504,9 @@ def recortar_nome(pasta):
             nome_base, extensao = os.path.splitext(nome_arquivo)  # Separa a extensão
             posicao_inicio = nome_base.find(divisor_1)
             posicao_final = nome_base.find(divisor_2)
-            nome_base = nome_base[:posicao_inicio + len(divisor_1)] + nome_base[posicao_final:]
-            nome_novo = os.path.join(pasta, nome_base + extensao)
             if posicao_inicio != -1 and posicao_final != -1 and posicao_final > posicao_inicio:
+                nome_base = nome_base[:posicao_inicio + len(divisor_1)] + nome_base[posicao_final:]
+                nome_novo = os.path.join(pasta, nome_base + extensao)
                 if nome_novo != nome_antigo:
                     if not os.path.exists(nome_novo):
                         os.rename(nome_antigo, nome_novo)
@@ -455,8 +517,6 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
-        else:
-            arquivos_ignorados += 1
 
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
@@ -482,8 +542,13 @@ def enumerar(pasta):
         if opc == 3:
             buscar = str(input('\033[33m"' + antes + '"' + ' deverá ser inserido a partir de qual caractere: \033'
                                                            '[m'))
-        tamanho_quantidade = 0
-        if tipo_contagem == 1:
+            quantidade = contar_itens_da_pasta(pasta)
+            print(f'Quantidade de arquivos na pasta: {quantidade}')
+            tamanho_quantidade = 0
+
+        elif tipo_contagem == 1:
+            quantidade = contar_itens_da_pasta(pasta)
+            print(f'Quantidade de arquivos na pasta: {quantidade}')
             tamanho_quantidade = 0
 
         elif tipo_contagem == 2:
@@ -500,7 +565,8 @@ def enumerar(pasta):
     arquivos_ignorados = 0
     indice = 0
     if opc == 1:  # Início
-        for entrada in os.scandir(pasta):
+        arquivos = list(os.scandir(pasta))
+        for entrada in arquivos:
             if not entrada.is_file():
                 continue
             indice += 1
@@ -548,8 +614,9 @@ def enumerar(pasta):
 
 
 def listar_todos_os_arquivos(pasta):
-    for arquivo in os.listdir(pasta):
-        print(arquivo)
+    arquivos = list(os.scandir(pasta))
+    for entrada in arquivos:
+        print(entrada.name)
     print()
     print('\033[33mRetornando ao menu principal...\033[m')
     time.sleep(1)
@@ -592,12 +659,17 @@ while True:
     elif resposta == 9:
         # Sair
         break
+
 # Adicionar:
 # feito apagar entre
 # feito reestruturação do código para evitar outros problemas
 # feito corrigir função 2 e 3, apagando ponto da extensão
-#buscar de uma lista e não ficar fazendo consultas diretas no Disco
-#criar função de desfazer
+# feito buscar de uma lista e não ficar fazendo consultas diretas no Disco
+# fazer def para todas as funções para reduzir a quantidade de linhas de codigo
+# Arrumar o enumerar
+# feito adicionar verificação no inverter,
+# feito listar arquivos para aparecer o nome direito
+# criar função de desfazer
 #retornar ao menu
 #relatorio de tempo total
 #remover mais de 1 espec de 1 vez
