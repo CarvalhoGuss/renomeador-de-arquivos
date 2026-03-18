@@ -82,14 +82,12 @@ def relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_i
     time.sleep(1)
 
 
-def processar_renomeacao(pasta, opc, caracteres, buscar=''):
+def leitura_nomes(pasta):
+    tempo_inicial = time.time()
     arquivos_renomeados = 0
     arquivos_ignorados = 0
-    tempo_inicial = time.time()
 
-    # "Congela" a pasta em uma lista para evitar loops infinitos
     arquivos = list(os.scandir(pasta))
-
     for entrada in arquivos:
         if not entrada.is_file():
             continue
@@ -98,30 +96,16 @@ def processar_renomeacao(pasta, opc, caracteres, buscar=''):
         nome_antigo = entrada.path
         nome_base, extensao = os.path.splitext(nome_arquivo)
 
-        # --- Lógica de Construção do Nome ---
-        if opc == 1:  # Início
-            nome_novo_base = caracteres + nome_base
-        elif opc == 2:  # Final
-            nome_novo_base = nome_base + caracteres
-        elif opc == 3:  # Após ocorrência
-            posicao = nome_base.find(buscar)
-            if posicao == -1:
-                arquivos_ignorados += 1
-                continue
-            nome_novo_base = nome_base[:posicao + 1] + caracteres + nome_base[posicao + 1:]
 
-        nome_novo = os.path.join(pasta, nome_novo_base + extensao)
-
-        # --- Execução com Segurança ---
-        if nome_novo != nome_antigo and not os.path.exists(nome_novo):
-            os.rename(nome_antigo, nome_novo)
-            arquivos_renomeados += 1
-        else:
-            arquivos_ignorados += 1
-
+def tempo_relatorio(pasta, tempo_inicial, arquivos_renomeados, arquivos_ignorados):
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
 
+
+def desfazer_renomeacoes(historico):
+    for antigo, novo in reversed(historico):
+        if os.path.exists(novo):
+            os.rename(novo, antigo)
 
 
 # Funções de Manipulação no Menu:
@@ -135,16 +119,23 @@ def adicao_de_caractere(pasta):
         opc = leia_int('\033[33mSua Opção: \033[m')
         caracteres = str(input('\033[33mDigite EXATAMENTE o texto que deseja adicionar: \033[m'))
         buscar = ''
+        historico = []
+        tempo_inicial = time.time()
+        arquivos_renomeados = 0
+        arquivos_ignorados = 0
+
         if opc == 3:
             buscar = str(input('\033[33m"' + caracteres + '"' + ' deverá ser inserido a partir de qual caractere: \033'
                                                                 '[m'))
         conf = confirmacao()
         if conf == 'S':
             break
-    tempo_inicial = time.time()
-    arquivos_renomeados = 0
-    arquivos_ignorados = 0
+
     if opc == 1:  # Início
+        tempo_inicial = time.time()
+        arquivos_renomeados = 0
+        arquivos_ignorados = 0
+        caminho_novo = ''
         arquivos = list(os.scandir(pasta))
         for entrada in arquivos:
             if not entrada.is_file():  # ignora pastas
@@ -153,9 +144,12 @@ def adicao_de_caractere(pasta):
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
 
+            #Módulo abaixo
             nome_novo = os.path.join(pasta, caracteres + nome_base + extensao)
             os.rename(nome_antigo, nome_novo)
+            historico.append((nome_antigo, caminho_novo)) # salva no histórico
             arquivos_renomeados += 1
+            #Fim do módulo
 
     elif opc == 2:  # Final
         arquivos = list(os.scandir(pasta))
@@ -165,9 +159,12 @@ def adicao_de_caractere(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #função principal
             nome_novo = os.path.join(pasta, nome_base + caracteres + extensao)
             os.rename(nome_antigo, nome_novo)
             arquivos_renomeados += 1
+            #fim da função
 
     elif opc == 3:  # Ocorrencia de uma caractere
         arquivos = list(os.scandir(pasta))
@@ -177,6 +174,8 @@ def adicao_de_caractere(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)  # Extensão
+
+            #inicio função
             posicao = nome_base.find(buscar)  # Encontra a localização da ocorrencia da String fornecida
             if posicao != -1:  # Verifica se a string está no arquivo
                 nome_novo = os.path.join(pasta, nome_base[:posicao + 1] + caracteres + nome_base[posicao + 1:] +
@@ -191,6 +190,8 @@ def adicao_de_caractere(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Função
+
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
 
@@ -254,6 +255,8 @@ def substituicao_de_caractere(pasta):
         nome_arquivo = entrada.name
         nome_antigo = entrada.path
         nome_base, extensao = os.path.splitext(nome_arquivo)
+
+        #Inicio da função
         if remover in nome_arquivo:
             nome_base = nome_base.replace(remover, substituicao, 1)
             nome_novo = os.path.join(pasta, nome_base + extensao)
@@ -264,6 +267,8 @@ def substituicao_de_caractere(pasta):
                 arquivos_ignorados += 1
         else:
             arquivos_ignorados += 1
+        #Fim da função
+
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
 
@@ -278,11 +283,13 @@ def iniciais_maiusculas(pasta):
     arquivos_ignorados = 0
     arquivos = list(os.scandir(pasta))
     for entrada in arquivos:
-        if not entrada.is_file():
+        if not entrada.is_file(follow_symlinks=False):
             continue
         nome_arquivo = entrada.name
         nome_antigo = entrada.path
         nome_base, extensao = os.path.splitext(nome_arquivo)
+
+        #Inicio da função
         alteradas = nome_base.title()
         nome_novo = os.path.join(pasta, alteradas + extensao)
         if nome_antigo != nome_novo:
@@ -290,6 +297,7 @@ def iniciais_maiusculas(pasta):
             arquivos_renomeados += 1
         else:
             arquivos_ignorados += 1
+        #Final da Função
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
 
@@ -309,8 +317,9 @@ def inverter(pasta):
             continue
         nome_arquivo = entrada.name
         nome_antigo = entrada.path
+        nome_base, extensao = os.path.splitext(nome_arquivo)
+        #Inicio da função
         if ' - ' in nome_arquivo:
-            nome_base, extensao = os.path.splitext(nome_arquivo)
             palavras = nome_base.split(' - ')
             palavras_invertidas = ' - '.join(palavras[::-1])
             nome_novo = os.path.join(pasta, palavras_invertidas + extensao)
@@ -321,6 +330,8 @@ def inverter(pasta):
                 arquivos_ignorados += 1
         else:
             arquivos_ignorados += 1
+        #Fim da Função
+
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
 
@@ -370,6 +381,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #Inicio da funcao
             if len(nome_base) > numero:
                 nome_novo = os.path.join(pasta, nome_base[numero:]) + extensao
                 if nome_novo != nome_antigo:
@@ -382,6 +395,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da funcao
 
     elif opc == 2:
         # Fatiamento do Final
@@ -392,6 +406,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #Inicio da Função
             if len(nome_base) > numero:
                 nome_novo = pasta + '/' + nome_base[:-numero] + extensao
                 if nome_novo != nome_antigo:
@@ -404,6 +420,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Funcao
 
     elif opc == 3:
         # Busca início até o final
@@ -414,6 +431,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo) # Encontra a extenção do arquivo
+
+            #Inicio da Função
             posicao = nome_base.find(buscar)  # Encontra a localização da ocorrencia da String fornecida
             if posicao != -1:  # Verifica se a string está no arquivo
                 nome_novo = os.path.join(pasta, nome_base[posicao:] + extensao)  # Gera o nome renomeado
@@ -427,6 +446,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Função
 
     elif opc == 4:
         # Busca final até o início
@@ -437,6 +457,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #Inicio da Função
             posicao = nome_base.rfind(buscar)  # Encontra a localização da ocorrencia da String fornecida
             if posicao != -1:  # Verifica se a string está no arquivo
                 nome_novo = os.path.join(pasta, nome_base[:posicao] + extensao)  # Gera o nome renomeado
@@ -450,6 +472,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 0
             else:
                 arquivos_ignorados += 0
+            #Fim da função
 
     elif opc == 5:
         arquivos = list(os.scandir(pasta))
@@ -459,6 +482,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #Inicio da Função
             if len(nome_base) > manter:
                 nome_novo = os.path.join(pasta, nome_base[:manter] + extensao)
                 if nome_novo != nome_antigo:
@@ -471,6 +496,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Função
 
     elif opc == 6:
         arquivos = list(os.scandir(pasta))
@@ -480,6 +506,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)
+
+            #Inicio da Função
             if len(nome_base) > manter:
                 novo_base = nome_base[-manter:]
                 nome_novo = os.path.join(pasta, nome_base[-manter:] + extensao)
@@ -493,6 +521,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Função
 
     elif opc == 7:
         arquivos = list(os.scandir(pasta))
@@ -502,6 +531,8 @@ def recortar_nome(pasta):
             nome_arquivo = entrada.name
             nome_antigo = entrada.path
             nome_base, extensao = os.path.splitext(nome_arquivo)  # Separa a extensão
+
+            #Inicio da Função
             posicao_inicio = nome_base.find(divisor_1)
             posicao_final = nome_base.find(divisor_2)
             if posicao_inicio != -1 and posicao_final != -1 and posicao_final > posicao_inicio:
@@ -517,6 +548,7 @@ def recortar_nome(pasta):
                     arquivos_ignorados += 1
             else:
                 arquivos_ignorados += 1
+            #Fim da Função
 
     tempo_final = time.time()
     relatorio(pasta, tempo_inicial, tempo_final, arquivos_renomeados, arquivos_ignorados)
@@ -564,6 +596,7 @@ def enumerar(pasta):
     arquivos_renomeados = 0
     arquivos_ignorados = 0
     indice = 0
+    tamanho_quantidade = 0
     if opc == 1:  # Início
         arquivos = list(os.scandir(pasta))
         for entrada in arquivos:
@@ -665,13 +698,13 @@ while True:
 # feito reestruturação do código para evitar outros problemas
 # feito corrigir função 2 e 3, apagando ponto da extensão
 # feito buscar de uma lista e não ficar fazendo consultas diretas no Disco
-# fazer def para todas as funções para reduzir a quantidade de linhas de codigo
-# Arrumar o enumerar
+# feito Arrumar o enumerar
 # feito adicionar verificação no inverter,
 # feito listar arquivos para aparecer o nome direito
-# criar função de desfazer
+# fazer def para todas as funções para reduzir a quantidade de linhas de codigo
+#criar função de desfazer
 #retornar ao menu
 #relatorio de tempo total
 #remover mais de 1 espec de 1 vez
-#tentar reduzir o codigo
 #retestar todas as funções
+# codigo atual com 633 linhas antes de reduzir
